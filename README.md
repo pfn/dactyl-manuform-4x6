@@ -11,8 +11,8 @@ Features:
 * QWERTY with a variation of homerow mods
 * Compatible with editing in QMK configurator
 * a CAPS WORD implementation
-* shift<space> to get underscore
-* shift<backspace> to get del
+* `shift<space>` to get underscore
+* `shift<backspace>` to get del
 * symbols layer
 * numpad layer
 * arrow nav layer
