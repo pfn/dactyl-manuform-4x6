@@ -11,7 +11,8 @@ void caps_word_enable(void) {
 
 void caps_word_disable(void) {
     caps_word_on = false;
-    unregister_mods(MOD_MASK_SHIFT);
+    // why was unregistering shift a thing?
+    // unregister_mods(MOD_MASK_SHIFT);
     if (host_keyboard_led_state().caps_lock) {
         tap_code(KC_CAPS);
     }
@@ -35,6 +36,8 @@ void process_caps_word(uint16_t keycode, const keyrecord_t *record) {
         }
 
         switch (keycode) {
+            // prevent canceling caps word on layer shift keys that wouldn't otherwise cancel
+            case QK_MOMENTARY ... QK_MOMENTARY_MAX:
             // keep shift-spc from cancelling caps word
             case KC_LSFT:
             case KC_RSFT:
