@@ -90,12 +90,12 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
     uint8_t mod_state = get_mods();
     switch (keycode) {
-    case KC_DOT:
+    case KC_PDOT:
     case KC_PPLS:
     case KC_PMNS:
     case KC_PSLS:
     case KC_PAST:
-    case KC_PEQL:
+    case KC_EQL: // KC_PEQL is not usable?
     case KC_1 ... KC_0:
         if (record->event.pressed) {
             register_code(keycode);
