@@ -11,6 +11,7 @@ Features:
 * QWERTY with a variation of homerow mods
 * Compatible with editing in QMK configurator
 * a CAPS WORD implementation
+* a NUM LOCK numpad implementation: locked until something else is keyed or expires
 * `shift<space>` to get underscore
 * `shift<backspace>` to get del
 * symbols layer

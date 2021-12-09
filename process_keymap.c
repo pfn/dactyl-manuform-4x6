@@ -155,6 +155,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     }
     if (get_oneshot_layer() == NUMPAD) {
         num_lock_timer = 0;
+        // make sure to turn off the layer, doesn't always get turned off
         clear_oneshot_layer_state(ONESHOT_PRESSED);
     }
 
