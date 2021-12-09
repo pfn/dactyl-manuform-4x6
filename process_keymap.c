@@ -1,6 +1,9 @@
 #include QMK_KEYBOARD_H
 
-// ripped off from https://github.com/precondition/dactyl-manuform-keymap/blob/main/keymap.c
+#define NUMLOCK_TIMEOUT 800
+#define NUMPAD 1
+
+// caps word ported from https://github.com/precondition/dactyl-manuform-keymap/blob/main/keymap.c
 static bool caps_word_on = false;
 void caps_word_enable(void) {
     caps_word_on = true;
@@ -80,11 +83,30 @@ void process_caps_word(uint16_t keycode, const keyrecord_t *record) {
     }
 }
 
+uint16_t num_lock_timer = 0;
+
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     process_caps_word(keycode, record);
 
     uint8_t mod_state = get_mods();
     switch (keycode) {
+    case KC_DOT:
+    case KC_PPLS:
+    case KC_PMNS:
+    case KC_PSLS:
+    case KC_PAST:
+    case KC_PEQL:
+    case KC_1 ... KC_0:
+        if (record->event.pressed) {
+            register_code(keycode);
+            if (get_oneshot_layer() == NUMPAD) {
+                num_lock_timer = timer_read();
+            }
+        } else {
+            unregister_code(keycode);
+        }
+        return false;
+        break;
     case KC_CAPS: // CAPS_WORD
         // Toggle `caps_word_on`
         if (record->event.pressed) {
@@ -102,7 +124,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     case KC_SPC: // shift-spc = _
         if (mod_state & MOD_MASK_SHIFT) {
             if (record->event.pressed) {
-                tap_code(KC_MINS); //
+                tap_code(KC_MINS);
             }
             return false;
         }
@@ -110,31 +132,46 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
     case KC_BSPC: // shift-bspc = del
         {
-        static bool delkey_registered;
-        if (record->event.pressed) {
-            if (mod_state & MOD_MASK_SHIFT) {
-                // In case only one shift is held
-                // see https://stackoverflow.com/questions/1596668/logical-xor-operator-in-c
-                // This also means that in case of holding both shifts and pressing KC_BSPC,
-                // Shift+Delete is sent (useful in Firefox) since the shift modifiers aren't deleted.
-                if (!(mod_state & MOD_BIT(KC_LSHIFT)) != !(mod_state & MOD_BIT(KC_RSHIFT))) {
-                    del_mods(MOD_MASK_SHIFT);
+            static bool delkey_registered;
+            if (record->event.pressed) {
+                if (mod_state & MOD_MASK_SHIFT) {
+                    if (!(mod_state & MOD_BIT(KC_LSHIFT)) != !(mod_state & MOD_BIT(KC_RSHIFT))) {
+                        del_mods(MOD_MASK_SHIFT);
+                    }
+                    register_code(KC_DEL);
+                    delkey_registered = true;
+                    set_mods(mod_state);
+                    return false;
                 }
-                register_code(KC_DEL);
-                delkey_registered = true;
-                set_mods(mod_state);
-                return false;
+            } else {
+                if (delkey_registered) {
+                    unregister_code(KC_DEL);
+                    delkey_registered = false;
+                    return false;
+                }
             }
-        } else {
-            if (delkey_registered) {
-                unregister_code(KC_DEL);
-                delkey_registered = false;
-                return false;
-            }
+            return true;
         }
-        return true;
-        }
+    }
+    if (get_oneshot_layer() == NUMPAD) {
+        num_lock_timer = 0;
+        clear_oneshot_layer_state(ONESHOT_PRESSED);
     }
 
     return true;
 };
+
+void oneshot_layer_changed_user(uint8_t layer) {
+    // set oneshot layer back on when it gets turned off by keypress
+    if (!layer && num_lock_timer) {
+        set_oneshot_layer(NUMPAD, ONESHOT_START);
+    }
+}
+
+void matrix_scan_user(void) {
+    // time out the numpad osl
+    if (num_lock_timer && timer_elapsed(num_lock_timer) > NUMLOCK_TIMEOUT) {
+        num_lock_timer = 0;
+        clear_oneshot_layer_state(ONESHOT_PRESSED);
+    }
+}
